@@ -1,0 +1,6 @@
+# Compiled files & Executables
+debug/
+target/
+
+# Backup files
+**/*.rs.bk

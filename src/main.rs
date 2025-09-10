@@ -20,9 +20,20 @@ fn main() {
                     Ok(_) => println!("Reading request..."),
                     Err(_) => println!("Failed to read request")
                 };
-                println!("{}", String::from_utf8_lossy(&request));
 
-                let response: &str = "HTTP/1.1 200 OK\r\n\r\n";
+                let request: String = String::from_utf8_lossy(&request).to_string();
+                println!("{}", request);
+
+                let request: Vec<&str> = request.split_whitespace().collect::<Vec<&str>>();
+                let url_path: &str = request.get(1).unwrap();
+
+                let mut response: String = String::from("HTTP/1.1 ");
+                if url_path == "/" {
+                    response.push_str("200 OK\r\n\r\n");
+                } else {
+                    response.push_str("404 Not Found\r\n\r\n");
+                }
+
                 match stream.write(response.as_bytes()) {
                     Ok(bytes) => bytes,
                     Err(_) => {

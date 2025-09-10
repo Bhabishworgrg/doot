@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{Read, Write};
 use std::net::TcpListener;
 
 fn main() {
@@ -14,15 +14,24 @@ fn main() {
         match stream {
             Ok(mut stream) => {
                 println!("Accepted a new connection");
-                match stream.write(b"HTTP/1.1 200 OK\r\n\r\n") {
+
+                let mut request: [u8; 8192] = [0; 8192];
+                match stream.read(&mut request) {
+                    Ok(_) => println!("Reading request..."),
+                    Err(_) => println!("Failed to read request")
+                };
+                println!("{}", String::from_utf8_lossy(&request));
+
+                let response: &str = "HTTP/1.1 200 OK\r\n\r\n";
+                match stream.write(response.as_bytes()) {
                     Ok(bytes) => bytes,
                     Err(_) => {
-                        println!("Failed to responed to request");
+                        println!("Failed to response to request");
                         return;
                     }
                 };
             },
-            Err(_) => println!("Error accepting a connection")
+            Err(_) => println!("Failed to accept a new connection")
         }
     }
 }

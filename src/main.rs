@@ -1,48 +1,54 @@
+mod constants;
+
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use std::process::exit;
+
+use constants::config;
+use constants::status_code;
 
 fn main() {
-    let listener: TcpListener = match TcpListener::bind("127.0.0.1:6969") {
-        Ok(listener) => listener,
-        Err(_) => {
-            println!("Failed to create a TCP listener");
-            return;
+    let listener: TcpListener = TcpListener::bind((config::HOST, config::PORT))
+        .unwrap_or_else(|_| {
+            eprintln!("Failed to create a TCP listener");
+            exit(1);
         }
-    };
+    );
 
-    for stream in listener.incoming() {
-        match stream {
+    for incoming in listener.incoming() {
+        match incoming {
             Ok(mut stream) => {
                 println!("Accepted a new connection");
 
-                let mut request: [u8; 8192] = [0; 8192];
-                match stream.read(&mut request) {
+                let mut buffer: [u8; config::MAX_REQ_SIZE] = [0; config::MAX_REQ_SIZE];
+                match stream.read(&mut buffer) {
                     Ok(_) => println!("Reading request..."),
-                    Err(_) => println!("Failed to read request")
-                };
-
-                let request: String = String::from_utf8_lossy(&request).to_string();
-                println!("{}", request);
-
-                let request: Vec<&str> = request.split_whitespace().collect::<Vec<&str>>();
-                let url_path: &str = request.get(1).unwrap();
-
-                let mut response: String = String::from("HTTP/1.1 ");
-                if url_path == "/" {
-                    response.push_str("200 OK\r\n\r\n");
-                } else {
-                    response.push_str("404 Not Found\r\n\r\n");
-                }
-
-                match stream.write(response.as_bytes()) {
-                    Ok(bytes) => bytes,
                     Err(_) => {
-                        println!("Failed to response to request");
-                        return;
+                        eprintln!("Failed to read request");
+                        continue;
                     }
                 };
+
+                let request: String = String::from_utf8_lossy(&buffer).to_string();
+                println!("{request}");
+
+                let request: Vec<&str> = request.split_whitespace().collect();
+                let resource_path: &str = request.get(1).unwrap();
+
+                let mut response: String = String::from("HTTP/1.1 ");
+                if resource_path == "/" {
+                    response.push_str(status_code::OK);
+                } else {
+                    response.push_str(status_code::NOT_FOUND);
+                }
+                response.push_str("\r\n\r\n");
+
+                if let Err(_) = stream.write(response.as_bytes()) {
+                    eprintln!("Failed to respond to the request");
+                    continue;
+                };
             },
-            Err(_) => println!("Failed to accept a new connection")
+            Err(_) => eprintln!("Failed to accept a new connection")
         }
     }
 }

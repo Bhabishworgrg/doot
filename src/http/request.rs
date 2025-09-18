@@ -1,10 +1,9 @@
-use std::collections::HashMap;
 use std::io::Read;
 use std::net::TcpStream;
 
 use crate::constants::config;
 
-pub fn read(stream: &mut TcpStream) -> String {
+pub fn read(mut stream: &TcpStream) -> String {
     println!("Reading a request...");
     
     let mut buffer: [u8; config::MAX_REQ_SIZE] = [0; config::MAX_REQ_SIZE];

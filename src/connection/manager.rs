@@ -1,22 +1,13 @@
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::TcpStream;
 
-use crate::constants::{config, status_code};
+use crate::constants::status_code;
+use crate::http::request;
 
 pub fn handle_connection(mut stream: TcpStream) {
-    println!("Reading a request...");
-
-    let mut buffer: [u8; config::MAX_REQ_SIZE] = [0; config::MAX_REQ_SIZE];
-
-    if let Err(_) = stream.read(&mut buffer) {
-        eprintln!("Failed to read the request.");
-    }
-
-    let request: String = String::from_utf8_lossy(&buffer).to_string();
-
-    println!("{request}\n");
+    let request: String = request::read(&mut stream);
     
-    let request: Vec<&str> =request.split_whitespace().collect();
+    let request: Vec<&str> = request.split_whitespace().collect();
     let resource_path: &str = request.get(1).unwrap();
 
     println!("Formulating response...\n");

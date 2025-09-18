@@ -4,3 +4,6 @@ target/
 
 # Backup files
 **/*.rs.bk
+
+# Kitty session files
+session.kitty
